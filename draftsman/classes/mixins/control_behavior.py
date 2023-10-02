@@ -11,6 +11,7 @@ from typing import Union
 from schema import SchemaError
 import six
 
+
 # six.add_metaclass(ABCMeta) # Doesn't work for some reason
 class ControlBehaviorMixin(six.with_metaclass(ABCMeta, object)):
     """

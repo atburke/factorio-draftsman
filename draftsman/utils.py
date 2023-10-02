@@ -851,6 +851,7 @@ def reissue_warnings(func):
 
     :returns: The result of the function.
     """
+
     # @ignore_traceback
     @wraps(func)
     def inner(*args, **kwargs):

@@ -44,7 +44,6 @@ def main():
     # Iterate over every tag in the list up to 1.0.0 (which is our limit)
     version_final = tag_list.index("1.0.0")
     for tag in tag_list[:version_final]:
-
         print(tag + ": ")
 
         # Set the head of the repo to match the current tag
