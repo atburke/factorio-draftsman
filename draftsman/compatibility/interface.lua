@@ -12,8 +12,9 @@ MOD_FOLDER_LOCATION = nil    -- Exactly where the mods are expected to be
 MOD_LIST = nil      -- Total list of all mods; populated by Python
 MOD_TREE = {}       -- Stack of mods keeping track of where to require files
 MOD_DIR = nil       -- Path to the current mod (at the top of the mod tree)
-CURRENT_FILE = nil  -- String filepath to the file we're currently executing
 CURRENT_DIR = ""    -- Location of the filepath in some relative directory
+CURRENT_TREE = {}   -- Stack of files require()'d.
+CURRENT_FILE = nil  -- String filepath to the file we're currently executing
 
 -- Menu simulations: can be empty, but cannot be nil; not included in factorio-
 -- data, so we supply dummy values
@@ -205,6 +206,17 @@ local old_require = require
 --     return result
 -- end
 
+function get_parent(path)
+    local pattern1 = "^(.+)/"
+    local pattern2 = "^(.+)\\"
+
+    if (string.match(path,pattern1) == nil) then
+        return string.match(path,pattern2)
+    else
+        return string.match(path,pattern1)
+    end
+end
+
 function require(module_name)
     --print("\tcurrent_file:", CURRENT_FILE)
     --print("\trequiring:", module_name)
@@ -222,47 +234,25 @@ function require(module_name)
     local norm_module_name, absolute = normalize_module_name(module_name)
     --print("Normalized module name:", norm_module_name)
 
-    CURRENT_FILE = norm_module_name
-
-    local function get_parent(path)
-        local pattern1 = "^(.+)/"
-        local pattern2 = "^(.+)\\"
-
-        if (string.match(path,pattern1) == nil) then
-            return string.match(path,pattern2)
-        else
-            return string.match(path,pattern1)
+    if not absolute then
+        local current_parent = MOD_DIR
+        if CURRENT_FILE then
+            current_parent = get_parent(CURRENT_FILE)
         end
+        norm_module_name = current_parent.."/"..norm_module_name
     end
-
-    PARENT_DIR = get_parent(norm_module_name)
-    --print("PARENT_DIR:", PARENT_DIR)
-    local path_added = false
-    -- TODO: revise this logic to be better
-    if PARENT_DIR then
-        local with_path = PARENT_DIR .. "/?.lua"
-        -- add the mod directory to the path if it's an absolute path
-        if not absolute then with_path = MOD_DIR .. "/" .. with_path end
-        --print("\tWITH_PATH: " .. with_path)
-        lua_add_path(with_path)
-        --print("added path:", with_path)
-        path_added = true
-    else -- God this whole thing is scuffed
-        --print("\trelative")
-        -- get directory of current file
-        local rel_parent = get_parent(CURRENT_FILE) or ""
-        if not absolute then with_path = MOD_DIR .. rel_parent .. "/?.lua" end -- MOD_DIR .. CURRENT_DIR
-        lua_add_path(with_path)
-        --print("added path:", with_path)
-        path_added = true
-    end
+    --print("Absolutized:", norm_module_name)
+    lua_push_current_file(norm_module_name)
+    --print("new current file:", CURRENT_FILE)
+    local with_path = get_parent(CURRENT_FILE).."/?.lua"
+    lua_add_path(with_path)
+    --print("added path:", with_path)
 
     result = old_require(module_name)
 
-    if path_added then
-        --print("removed path")
-        lua_remove_path()
-    end
+    --print("removed path")
+    lua_remove_path()
+    lua_pop_current_file()
 
     if mod_changed then
         --print("removed mod")
@@ -358,6 +348,18 @@ end
 -- (Re)set the package path to some known value
 function lua_set_path(path)
     package.path = path
+end
+
+-- Push a file to the stack of files the current require chain is importing
+function lua_push_current_file(file)
+    table.insert(CURRENT_TREE, file)
+    CURRENT_FILE = file
+end
+
+-- Pop a file off the stack of files the current require chain is using
+function lua_pop_current_file()
+    table.remove(CURRENT_TREE)
+    CURRENT_FILE = CURRENT_TREE[#CURRENT_TREE]
 end
 
 -- Unloads all files. Lua has a package.preload functionality where files are
