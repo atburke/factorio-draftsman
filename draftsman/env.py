@@ -1234,7 +1234,7 @@ def extract_tiles(lua, data_location, verbose):
 # =============================================================================
 
 
-def update(verbose=False, path=None, show_logs=False, no_mods=False, report=None):
+def update(verbose=False, path=None, factorio_path=None, show_logs=False, no_mods=False, report=None):
     """
     Updates the data in the :py:mod:`.draftsman.data` modules.
 
@@ -1246,7 +1246,11 @@ def update(verbose=False, path=None, show_logs=False, no_mods=False, report=None
     # Figure out what directory we're in
     env_dir = os.path.dirname(__file__)
     # Create some quick access folders
-    factorio_data = os.path.join(env_dir, "factorio-data")
+    if factorio_path:
+        factorio_data = factorio_path
+    else:
+        factorio_data = os.path.join(env_dir, "factorio-data")
+
     data_location = os.path.join(env_dir, "data")
     if path is None:
         factorio_mods_folder = os.path.join(env_dir, "factorio-mods")
@@ -1254,6 +1258,7 @@ def update(verbose=False, path=None, show_logs=False, no_mods=False, report=None
         factorio_mods_folder = path
 
     if verbose:
+        print("Reading Factorio data from:", factorio_data)
         print("Reading mods from:", factorio_mods_folder)
 
     # Get the info from factorio-data and treat it as the "base" mod
@@ -1916,6 +1921,13 @@ def main():
         "`python_install/site-packages/draftsman/factorio-mods`",
     )
     parser.add_argument(
+        "-f",
+        "--factorio-path",
+        type=str,
+        help="The path of your factorio installation; defaults to "
+        "`python_install/site-packages/draftsman/factorio-data"
+    )
+    parser.add_argument(
         "-l",
         "--log",
         action="store_true",
@@ -1951,6 +1963,7 @@ def main():
         update(
             verbose=args.verbose,
             path=args.path,
+            factorio_path=args.factorio_path,
             show_logs=args.log,
             no_mods=args.no_mods,
             report=args.report,
