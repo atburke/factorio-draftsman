@@ -1234,7 +1234,7 @@ def extract_tiles(lua, data_location, verbose):
 # =============================================================================
 
 
-def update(verbose=False, path=None, factorio_path=None, show_logs=False, no_mods=False, report=None):
+def update(verbose=False, path=None, factorio_path: str=None, show_logs=False, no_mods=False, report=None):
     """
     Updates the data in the :py:mod:`.draftsman.data` modules.
 
@@ -1256,6 +1256,13 @@ def update(verbose=False, path=None, factorio_path=None, show_logs=False, no_mod
         factorio_mods_folder = os.path.join(env_dir, "factorio-mods")
     else:
         factorio_mods_folder = path
+
+    # Normalize paths
+    if factorio_data.endswith("/"):
+        factorio_data = factorio_data[:-1]
+
+    if factorio_mods_folder.endswith("/"):
+        factorio_mods_folder = factorio_mods_folder[:-1]
 
     if verbose:
         print("Reading Factorio data from:", factorio_data)
@@ -1766,6 +1773,7 @@ def update(verbose=False, path=None, factorio_path=None, show_logs=False, no_mod
     lua.execute(file_to_string(os.path.join(env_dir, "compatibility", "interface.lua")))
 
     # Record where to look for mod folders
+    lua.globals().FACTORIO_DATA_LOCATION = factorio_data
     lua.globals().MOD_FOLDER_LOCATION = factorio_mods_folder
 
     # Create aliases to the Lua functions for ease of access

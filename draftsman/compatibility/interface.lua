@@ -110,7 +110,7 @@ local function normalize_module_name(module_name)
     --print(modname, match, name)
     local absolute = true
     if name == "core" or name == "base" then
-        module_name = string.gsub(module_name, match, "./factorio-data/"..name)
+        module_name = string.gsub(module_name, match, FACTORIO_DATA_LOCATION.."/"..name)
     elseif match ~= nil then
         -- Check if the name is the name of a currently enabled mod
         -- We need to do this because some people like to name their files
